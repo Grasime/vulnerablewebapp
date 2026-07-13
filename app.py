@@ -1,12 +1,16 @@
-from flask import Flask, request
-from models import db, User
-from werkzeug.security import generate_password_hash
+from flask import Flask, request, jsonify
+from models import db, User, Account
+from flask_jwt_extended import JWTManager, create_access_token
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 
 
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///securebank.db"
+
+app.config["JWT_SECRET_KEY"] = "youll-never-guess-this"
+jwt = JWTManager(app)
 
 db.init_app(app)
 
@@ -35,15 +39,20 @@ def register():
 
 
 
+@app.route('/login', methods=["POST"])
+def login():
+    data = request.get_json()
+    username = data.get("username")
+    password = data.get("password")
+    user_check = User.query.filter_by(username=username).first()
+    if user_check is None:
+        return "Please try again.", 401
 
-
-
-
-
-
-
-
-
+    if check_password_hash(user_check.password, password):
+        access_token = create_access_token(identity=user_check.id)
+        return jsonify(access_token=access_token), 200
+    else:
+        return "invalid username or password", 401
 
 
 
