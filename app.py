@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 from models import db, User, Account
-from flask_jwt_extended import JWTManager, create_access_token
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash, check_password_hash
 
 
@@ -49,10 +49,33 @@ def login():
         return "Please try again.", 401
 
     if check_password_hash(user_check.password, password):
-        access_token = create_access_token(identity=user_check.id)
+        access_token = create_access_token(identity=str(user_check.id))
         return jsonify(access_token=access_token), 200
     else:
         return "invalid username or password", 401
+
+
+
+@app.route('/profile')
+@jwt_required()
+def profile():
+    current_user_id = get_jwt_identity()
+    current_user = User.query.filter_by(id=str(current_user_id)).first()
+    if current_user is None:
+        return "Please try again.", 401
+    else:
+        return jsonify(username=current_user.username, email=current_user.email)
+
+
+
+
+
+
+
+
+
+
+
 
 
 
