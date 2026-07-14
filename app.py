@@ -12,6 +12,8 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///securebank.db"
 app.config["JWT_SECRET_KEY"] = "youll-never-guess-this"
 jwt = JWTManager(app)
 
+
+
 db.init_app(app)
 
 @app.route('/')
@@ -67,25 +69,10 @@ def profile():
         return jsonify(username=current_user.username, email=current_user.email)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    app.run(debug=True)
+    app.run(debug=True, host="0.0.0.0")
 
 
     
