@@ -38,6 +38,10 @@ def register():
     new_user = User(username=username, password=hashed_password, email=email)
     db.session.add(new_user)
     db.session.commit()
+
+    new_account = Account(user_id=new_user.id, balance=0)
+    db.session.add(new_account)
+    db.session.commit()
     return "User registered succesfully", 201
 
 
@@ -68,6 +72,34 @@ def profile():
         return "Please try again.", 401
     else:
         return jsonify(username=current_user.username, email=current_user.email)
+
+
+
+@app.route('/profile/balance', methods=["GET"])
+@jwt_required()
+def balance():
+    current_user_id = get_jwt_identity()
+    account = Account.query.filter_by(user_id=str(current_user_id)).first()
+    if account is None:
+        return "Account doesn't exist", 401
+    else:
+        return jsonify(balance=account.balance / 100)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 if __name__ == "__main__":
