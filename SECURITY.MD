@@ -18,3 +18,7 @@
 ## Containerization
 - Multi-stage dependency install ordering for build efficiency
 - .dockerignore excludes venv, instance/ (local DB), and .git from image builds
+
+## Business Logic
+- Account created atomically alongside User at registration (no orphaned users without accounts)
+- Balance stored as integer (pence) to avoid floating-point rounding errors in financial calculations

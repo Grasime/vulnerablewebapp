@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from models import db, User, Account
+from models import db, User, Account, Transaction
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
@@ -87,12 +87,44 @@ def balance():
 
 
 
+@app.route('/transfer',methods=["POST"])
+@jwt_required()
+def transfer():
+    data = request.get_json()
+    recipient_username = data.get("recipient")
 
+    recipient_user= User.query.filter_by(username=recipient_username).first()
+    if recipient_user is None:
+        return jsonify(error="Recipient not found"), 404
+    
+    recipient_account = Account.query.filter_by(user_id=recipient_user.id).first()
+    if recipient_account is None:
+        return jsonify(error="Recipient account not found"), 404
+    
+    amount = data.get("amount")
+    if amount is None or amount <= 0:
+        return jsonify(error="Invalid transfer amount"), 400
+    
+    amount_pence = int(amount * 100)
+    sender_id = get_jwt_identity()
 
-
-
-
-
+    sender_account = Account.query.filter_by(user_id=str(sender_id)).first()
+    if sender_account is None:
+        return jsonify(error="Sender account not found"), 404
+    
+    if sender_account.balance < amount_pence:
+        return jsonify(error="Insufficient funds"), 400
+    
+    sender_account.balance -= amount_pence
+    recipient_account.balance += amount_pence
+    new_transaction = Transaction(
+        sender=sender_account.id,
+        receiver=recipient_account.id,
+        amount=amount_pence
+    )    
+    db.session.add(new_transaction)
+    db.session.commit()
+    return jsonify(message="Transfer successful", new_balance=sender_account.balance / 100), 200
 
 
 
