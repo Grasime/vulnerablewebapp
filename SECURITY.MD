@@ -26,3 +26,8 @@
 ## SAST Findings (Bandit)
 - B201 (debug=True): Fixed — debug mode now controlled via FLASK_DEBUG environment variable, defaults to False (fail-safe)
 - B104 (binding to 0.0.0.0): Reviewed, accepted — required for the app to be reachable from outside its Docker container; not a concern in this deployment context
+
+## SAST Findings (Bandit)
+- B201 (debug=True): Fixed — debug mode now controlled via FLASK_DEBUG environment variable, defaults to False (fail-safe)
+- B104 (binding to 0.0.0.0): Reviewed, suppressed inline (# nosec B104) with justification — required for the app to be reachable from outside its Docker container; not a concern in this deployment context
+- Bandit integrated into CI pipeline (.github/workflows/security.yml) — runs on every push/PR to main, fails the build on any unreviewed finding
