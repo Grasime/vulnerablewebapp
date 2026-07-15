@@ -22,3 +22,7 @@
 ## Business Logic
 - Account created atomically alongside User at registration (no orphaned users without accounts)
 - Balance stored as integer (pence) to avoid floating-point rounding errors in financial calculations
+
+## SAST Findings (Bandit)
+- B201 (debug=True): Fixed — debug mode now controlled via FLASK_DEBUG environment variable, defaults to False (fail-safe)
+- B104 (binding to 0.0.0.0): Reviewed, accepted — required for the app to be reachable from outside its Docker container; not a concern in this deployment context

@@ -14,7 +14,6 @@ app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY")
 jwt = JWTManager(app)
 
 
-
 db.init_app(app)
 
 @app.route('/')
@@ -45,7 +44,6 @@ def register():
     return "User registered succesfully", 201
 
 
-
 @app.route('/login', methods=["POST"])
 def login():
     data = request.get_json()
@@ -62,7 +60,6 @@ def login():
         return "invalid username or password", 401
 
 
-
 @app.route('/profile')
 @jwt_required()
 def profile():
@@ -72,7 +69,6 @@ def profile():
         return "Please try again.", 401
     else:
         return jsonify(username=current_user.username, email=current_user.email)
-
 
 
 @app.route('/profile/balance', methods=["GET"])
@@ -127,17 +123,11 @@ def transfer():
     return jsonify(message="Transfer successful", new_balance=sender_account.balance / 100), 200
 
 
-
-
-
-
-
-
-
 if __name__ == "__main__":
     with app.app_context():
         db.create_all()
-    app.run(debug=True, host="0.0.0.0")
+    debug_mode = os.environ.get("FLASK_DEBUG", "False") == "True"
+    app.run(debug=debug_mode, host="0.0.0.0")
 
 
     
