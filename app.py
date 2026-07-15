@@ -28,6 +28,12 @@ def register():
     password = data.get("password")
     email = data.get("email")
 
+    if not username or not password or not email:
+        return jsonify(error="Username, password, and email are all required"), 400
+
+    if len(password) < 8:
+        return jsonify(error="Password must be at least 8 characters"), 400
+    
     existing_user = User.query.filter_by(username=username).first()
     if existing_user:
         return("User already exists, please choose a different username")
@@ -51,13 +57,13 @@ def login():
     password = data.get("password")
     user_check = User.query.filter_by(username=username).first()
     if user_check is None:
-        return "Please try again.", 401
+        return jsonify(error="Invalid username or password"), 401
 
     if check_password_hash(user_check.password, password):
         access_token = create_access_token(identity=str(user_check.id))
         return jsonify(access_token=access_token), 200
     else:
-        return "invalid username or password", 401
+        return jsonify(error="Invalid username or password"), 401
 
 
 @app.route('/profile')

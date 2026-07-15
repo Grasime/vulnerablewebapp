@@ -57,3 +57,9 @@ All findings reviewed and either fixed or explicitly documented/suppressed with 
 - SELECT ... FOR UPDATE applied to both sender_account and recipient_account queries in /transfer, locking rows for the duration of the transaction
 - Note: SQLite does not support true row-level locking (locks at whole-database-file granularity). This still serializes concurrent transfer attempts and prevents the double-spend race condition, but a production deployment would use PostgreSQL for proper row-level locking granularity
 - Only Account rows require locking (only table mutated during a transfer); User rows are read-only in this route
+
+## Input Validation & Information Disclosure
+- /register validates presence of username, password, email; rejects requests with missing/empty fields
+- Minimum password length of 8 characters enforced at registration
+- /login returns identical error message and status code (401, "Invalid username or password") for both nonexistent usernames and incorrect passwords — prevents username enumeration (CWE-203)
+- Verified via manual testing: confirmed byte-identical responses for both failure paths
