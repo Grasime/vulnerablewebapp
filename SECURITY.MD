@@ -31,3 +31,14 @@
 - B201 (debug=True): Fixed — debug mode now controlled via FLASK_DEBUG environment variable, defaults to False (fail-safe)
 - B104 (binding to 0.0.0.0): Reviewed, suppressed inline (# nosec B104) with justification — required for the app to be reachable from outside its Docker container; not a concern in this deployment context
 - Bandit integrated into CI pipeline (.github/workflows/security.yml) — runs on every push/PR to main, fails the build on any unreviewed finding
+
+## SAST Findings (Semgrep)
+- python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host: Same underlying issue as Bandit B104, suppressed inline (# nosemgrep) with justification — required for Docker container networking
+- Semgrep (p/security-audit ruleset) integrated into CI pipeline — runs on every push/PR to main
+
+## Container Image Scanning (Trivy)
+- `trivy image securebank`: 22 findings (19 HIGH, 3 CRITICAL), all in Debian OS-level packages from the python:3.12-slim base image (bsdutils, gzip, perl-base, util-linux, ncurses, etc.)
+- None have a fixed version currently available upstream (Debian maintainers have not yet shipped patches)
+- Reviewed and accepted: none of these packages are invoked by application code; attack surface is not exposed through the app's functionality
+- Will be re-evaluated on future image rebuilds as upstream patches become available
+
