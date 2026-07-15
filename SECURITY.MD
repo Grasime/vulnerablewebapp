@@ -52,3 +52,8 @@ Automated security pipeline runs on every push/PR to main (.github/workflows/sec
 6. Trivy container image scan (OS-level CVEs in base image)
 
 All findings reviewed and either fixed or explicitly documented/suppressed with justification (see above).
+
+## Race Condition Protection
+- SELECT ... FOR UPDATE applied to both sender_account and recipient_account queries in /transfer, locking rows for the duration of the transaction
+- Note: SQLite does not support true row-level locking (locks at whole-database-file granularity). This still serializes concurrent transfer attempts and prevents the double-spend race condition, but a production deployment would use PostgreSQL for proper row-level locking granularity
+- Only Account rows require locking (only table mutated during a transfer); User rows are read-only in this route

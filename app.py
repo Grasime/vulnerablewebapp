@@ -93,7 +93,7 @@ def transfer():
     if recipient_user is None:
         return jsonify(error="Recipient not found"), 404
     
-    recipient_account = Account.query.filter_by(user_id=recipient_user.id).first()
+    recipient_account = Account.query.filter_by(user_id=recipient_user.id).with_for_update().first()
     if recipient_account is None:
         return jsonify(error="Recipient account not found"), 404
     
@@ -104,7 +104,7 @@ def transfer():
     amount_pence = int(amount * 100)
     sender_id = get_jwt_identity()
 
-    sender_account = Account.query.filter_by(user_id=str(sender_id)).first()
+    sender_account = Account.query.filter_by(user_id=str(sender_id)).with_for_update().first()
     if sender_account is None:
         return jsonify(error="Sender account not found"), 404
     
