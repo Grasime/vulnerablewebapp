@@ -42,3 +42,13 @@
 - Reviewed and accepted: none of these packages are invoked by application code; attack surface is not exposed through the app's functionality
 - Will be re-evaluated on future image rebuilds as upstream patches become available
 
+## CI/CD Pipeline
+Automated security pipeline runs on every push/PR to main (.github/workflows/security.yml):
+1. Dependency installation
+2. Bandit (Python SAST)
+3. Semgrep (multi-language SAST, security-audit ruleset)
+4. Docker image build
+5. Trivy filesystem scan (dependency CVEs)
+6. Trivy container image scan (OS-level CVEs in base image)
+
+All findings reviewed and either fixed or explicitly documented/suppressed with justification (see above).
