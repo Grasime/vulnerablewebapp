@@ -25,3 +25,8 @@ jobs:
         run: |
           pip install bandit
           bandit -r . -x ./venv
+
+      - name: Run Semgrep
+        run : |
+          pip install semgrep
+          semgrep --config p/security-audit . --exclude venv

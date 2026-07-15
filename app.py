@@ -127,7 +127,9 @@ if __name__ == "__main__":
     with app.app_context():
         db.create_all()
     debug_mode = os.environ.get("FLASK_DEBUG", "False") == "True"
-    app.run(debug=debug_mode, host="0.0.0.0") # nosec B104 - intentional, required for Docker container networking
+    # nosemgrep: python.flask.security.audit.app-run-param-config.avoid_app_run_with_bad_host
+    app.run(debug=debug_mode, host="0.0.0.0") # nosec B104 - intentional, required for Docker container networking  
+    
 
 
     
