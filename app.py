@@ -18,7 +18,7 @@ db.init_app(app)
 
 @app.route('/')
 def home():
-    return "Welcome to the worlds most secure bank"
+    return "THIS IS THE VULNERABLE BRANCH"
 
 
 @app.route('/register', methods=["POST"])
