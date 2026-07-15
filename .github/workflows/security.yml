@@ -22,5 +22,6 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run bandit
-        run: | pip install bandit
-            bandit -r . -x ./venv
+        run: |
+          pip install bandit
+          bandit -r . -x ./venv
