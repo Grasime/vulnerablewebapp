@@ -63,3 +63,12 @@ All findings reviewed and either fixed or explicitly documented/suppressed with 
 - Minimum password length of 8 characters enforced at registration
 - /login returns identical error message and status code (401, "Invalid username or password") for both nonexistent usernames and incorrect passwords — prevents username enumeration (CWE-203)
 - Verified via manual testing: confirmed byte-identical responses for both failure paths
+
+## CI Pipeline — Vulnerable Branch Test Results
+Deliberately reintroduced SQL injection in /login (raw f-string query via db.session.execute(text(...))) on `vulnerable-version` branch, tested via pull request into main:
+
+- Bandit: CAUGHT (B608: hardcoded_sql_expressions, flagged exact vulnerable line)
+- Semgrep (p/security-audit): MISSED (0 findings) — likely due to ruleset not covering this specific SQLAlchemy text() execution pattern
+- Manually exploited and confirmed: crafted payload `' OR '1'='1' --` successfully bypassed authentication, obtained valid JWT without correct credentials
+
+This result demonstrates the value of running multiple independent SAST tools — no single tool has complete coverage, and relying on Semgrep alone would have missed this vulnerability entirely.
