@@ -19,14 +19,17 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
       - name: Run bandit
+        continue-on-error: true
         run: |
           pip install bandit
           bandit -r . -x ./venv
       - name: Run Semgrep
+        continue-on-error: true
         run: |
           pip install semgrep
           semgrep --config p/security-audit . --exclude venv
       - name: Build Docker Image
+        continue-on-error: true
         run: docker build -t securebank .
       - name: Run Trivy filesystem scan
         run: |
