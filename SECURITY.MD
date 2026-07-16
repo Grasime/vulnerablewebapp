@@ -72,3 +72,13 @@ Deliberately reintroduced SQL injection in /login (raw f-string query via db.ses
 - Manually exploited and confirmed: crafted payload `' OR '1'='1' --` successfully bypassed authentication, obtained valid JWT without correct credentials
 
 This result demonstrates the value of running multiple independent SAST tools — no single tool has complete coverage, and relying on Semgrep alone would have missed this vulnerability entirely.
+
+## Critical Finding: SAST Tooling Gap
+Deliberately reintroduced a hardcoded, weak JWT secret (app.config["JWT_SECRET_KEY"] = "secret") on vulnerable-version branch.
+
+- Bandit: MISSED (0 findings) — likely because the value is set via dictionary-key assignment (app.config["..."] = ...) rather than a direct variable assignment, which Bandit's hardcoded-secret rules (B105/B106) appear tuned to detect
+- Semgrep (p/security-audit): MISSED (0 findings)
+- Manual exploitation: successfully forged a fully valid JWT for any user ID entirely offline, with no interaction with /login, using only the known weak secret — confirmed via PyJWT script and live test against /profile
+
+This demonstrates that automated SAST tooling has real, meaningful blind spots even for textbook vulnerabilities, and reinforces that automated scanning must be paired with manual security review and testing — not relied upon as a sole control.
+
