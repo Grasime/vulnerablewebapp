@@ -2,60 +2,60 @@
 
 *To be vulnerable... or not to be.*
 
-Built as a hands-on way to actually learn AppSec, rather than just consuming courses — this is a small banking API (no UI, cURL/Postman only) with two branches telling one story:
+Built as a hands-on way to actually learn AppSec, instead of just working through courses. This is a small banking API (no UI, cURL/Postman only) with two branches telling one story.
 
-- **`main`** — a secure-by-design build: hashed passwords, JWT auth, IDOR-tested transfer logic, row-level locking, and a CI/CD pipeline running Bandit, Semgrep, and Trivy on every push.
-- **`vulnerable-version`** — the same app with two real vulnerabilities deliberately reintroduced, to answer a question I didn't know the answer to going in: *would my own pipeline catch them?*
+* **`main`** is a secure-by-design build: hashed passwords, JWT auth, transfer logic I manually tested for IDOR, row-level locking, and a CI/CD pipeline running Bandit, Semgrep, and Trivy on every push.
+* **`vulnerable-version`** is the same app with two real vulnerabilities put back in on purpose. I wanted to answer a question I genuinely didn't know going in: would my own pipeline actually catch them?
 
-(Spoiler: one, yes. One, no. See [PR #1](https://github.com/Grasime/vulnerablewebapp/pull/1) and [SECURITY.md](./SECURITY.md) for the full breakdown.)
+Spoiler: one, yes. One, no. See [PR #1](https://github.com/Grasime/vulnerablewebapp/pull/1) and [SECURITY.md](./SECURITY.md) for the full breakdown.
 
 ## Tech Stack
 
-- **Language & Framework**: Python 3.12, Flask
-- **Database & ORM**: SQLite, SQLAlchemy (Flask-SQLAlchemy)
-- **Authentication**: JWT-based stateless auth via Flask-JWT-Extended; passwords hashed with Werkzeug's `generate_password_hash` (scrypt)
-- **Containerization**: Docker (`python:3.12-slim` base image)
-- **Secrets Management**: python-dotenv, environment-based configuration
-- **CI/CD**: GitHub Actions
-- **Security Tooling**:
-  - [Bandit](https://bandit.readthedocs.io/) — Python SAST
-  - [Semgrep](https://semgrep.dev/) — multi-language SAST (security-audit ruleset)
-  - [Trivy](https://trivy.dev/) — dependency & container image vulnerability scanning
+* **Language & Framework**: Python 3.12, Flask
+* **Database & ORM**: SQLite, SQLAlchemy (Flask-SQLAlchemy)
+* **Authentication**: JWT-based stateless auth via Flask-JWT-Extended. Passwords hashed with Werkzeug's `generate_password_hash` (scrypt).
+* **Containerization**: Docker (`python:3.12-slim` base image)
+* **Secrets Management**: python-dotenv, environment-based configuration
+* **CI/CD**: GitHub Actions
+* **Security Tooling**:
+  * [Bandit](https://bandit.readthedocs.io/) for Python SAST
+  * [Semgrep](https://semgrep.dev/) for multi-language SAST (security-audit ruleset)
+  * [Trivy](https://trivy.dev/) for dependency and container image vulnerability scanning
 
 ## Features
 
-- **User registration** — with input validation and minimum password length enforcement
-- **Login** — returns a signed JWT on success; identical error responses for invalid usernames and incorrect passwords (prevents username enumeration)
-- **Profile** — view your own account details via a JWT-protected route
-- **Balance** — view your account balance (stored internally as integer pence to avoid floating-point rounding errors)
-- **Transfer** — send money to another user, with:
-  - Sender identity always derived from the verified JWT, never from the request body (IDOR-tested)
-  - Positive-amount and sufficient-funds validation
-  - Row-level locking (`SELECT ... FOR UPDATE`) to mitigate race conditions on concurrent transfers
-  - A full transaction audit trail
+* **User registration**, with input validation and a minimum password length
+* **Login**, returns a signed JWT on success. Invalid usernames and incorrect passwords get identical error responses, so the app doesn't leak which usernames exist.
+* **Profile**, view your own account details through a JWT-protected route
+* **Balance**, view your account balance (stored internally as integer pence so floating-point rounding never becomes a problem)
+* **Transfer**, send money to another user:
+  * Sender identity always comes from the verified JWT, never from the request body. I tested this against IDOR myself.
+  * Amount has to be positive and the sender needs sufficient funds
+  * Row-level locking (`SELECT ... FOR UPDATE`) to cut down on race conditions when transfers happen concurrently
+  * Every transfer gets logged as a full transaction record
 
 ## Security Highlights
 
-See [SECURITY.md](./SECURITY.md) for the complete, ongoing log of controls, findings, and decisions. Highlights:
+Full ongoing log of controls, findings, and decisions is in [SECURITY.md](./SECURITY.md). Short version:
 
-- Every database query goes through the SQLAlchemy ORM — no raw string-built SQL on `main`
-- Passwords hashed with scrypt, never stored or logged in plaintext
-- JWT secret loaded from environment variables, never committed to source
-- Manually verified IDOR protection: crafted a request with a spoofed `sender` field and confirmed via direct database inspection that the server ignored it entirely, using only the JWT-verified identity
-- CI pipeline runs Bandit, Semgrep, and Trivy on every push and pull request to `main`
+* Every database query goes through the SQLAlchemy ORM. No raw string-built SQL on `main`.
+* Passwords hashed with scrypt, never stored or logged in plaintext
+* JWT secret loaded from environment variables, never committed to source
+* IDOR protection manually verified: I crafted a request with a spoofed `sender` field and confirmed via direct database inspection that the server ignored it completely, using only the JWT-verified identity
+* CI pipeline runs Bandit, Semgrep, and Trivy on every push and pull request to `main`
 
-## The Vulnerable Branch — What I Actually Found
+## The Vulnerable Branch: What I Actually Found
 
-On `vulnerable-version`, I deliberately reintroduced two real vulnerabilities to test whether my own CI pipeline would catch them:
+On `vulnerable-version` I put two real vulnerabilities back in, to see if my own CI pipeline would catch them.
 
 | Vulnerability | Bandit | Semgrep | Notes |
 |---|---|---|---|
-| SQL injection in `/login` (raw f-string query) | ✅ Caught (`B608`) | ❌ Missed | Confirmed exploitable — bypassed authentication with `' OR '1'='1' --` and obtained a valid JWT with no correct password |
-| Hardcoded weak JWT secret (`"secret"`) | ❌ Missed | ❌ Missed | Confirmed exploitable — forged a fully valid JWT for any user ID entirely offline, with zero interaction with `/login` |
+| SQL injection in `/login` (raw f-string query) | Caught (`B608`) | Missed | Confirmed exploitable. Bypassed authentication with `' OR '1'='1' --` and got a valid JWT with no correct password. |
+| Hardcoded weak JWT secret (`"secret"`) | Missed | Missed | Confirmed exploitable. Forged a fully valid JWT for any user ID entirely offline, with zero interaction with `/login`. |
 
-**Full details, payloads, and reasoning in [SECURITY.md](./SECURITY.md).** The PR is intentionally left open, unmerged, as a permanent artifact: [github.com/Grasime/vulnerablewebapp/pull/1](https://github.com/Grasime/vulnerablewebapp/pull/1)
+Full details, payloads, and reasoning are in [SECURITY.md](./SECURITY.md). The PR is intentionally left open and unmerged, as a permanent artifact: [github.com/Grasime/vulnerablewebapp/pull/1](https://github.com/Grasime/vulnerablewebapp/pull/1)
 
-This was the most valuable part of the project — proof that automated SAST tooling has real, meaningful blind spots even for textbook vulnerabilities, and that it has to be paired with manual review and testing, not relied on alone.
+This ended up being the most valuable part of the project. Automated SAST tooling has real, meaningful blind spots even for textbook vulnerabilities. A green pipeline isn't proof of security on its own, it still needs manual review and actually trying to break your own stuff.
 
 ## Running Locally
 
@@ -74,7 +74,7 @@ pip install -r requirements.txt
 python3 app.py
 ```
 
-Or via Docker:
+Or with Docker:
 
 ```bash
 docker build -t securebank .
@@ -113,7 +113,8 @@ securebank/
 
 ## Roadmap
 
-- [ ] Rate limiting on `/login` (brute-force protection)
-- [ ] PostgreSQL migration for true row-level locking
-- [ ] Additional deliberately-introduced vulnerabilities (IDOR variants, XSS, SSRF)
-- [ ] Terraform/AWS deployment
+* [ ] Rate limiting on `/login` (brute-force protection)
+* [ ] PostgreSQL migration for true row-level locking
+* [ ] More deliberately-introduced vulnerabilities (IDOR variants, XSS, SSRF)
+* [ ] Terraform/AWS deployment
+
