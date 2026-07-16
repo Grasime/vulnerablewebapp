@@ -4,13 +4,14 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 import os
+from sqlalchemy import text
 
 
 load_dotenv()
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///securebank.db"
 
-app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY")
+app.config["JWT_SECRET_KEY"] = "secret"
 jwt = JWTManager(app)
 
 
@@ -55,15 +56,15 @@ def login():
     data = request.get_json()
     username = data.get("username")
     password = data.get("password")
-    user_check = User.query.filter_by(username=username).first()
-    if user_check is None:
+    
+    query = f"SELECT * FROM user WHERE username='{username}' AND password='{password}'"
+    result = db.session.execute(text(query))
+    user_row = result.fetchone()
+    if user_row is None:
         return jsonify(error="Invalid username or password"), 401
 
-    if check_password_hash(user_check.password, password):
-        access_token = create_access_token(identity=str(user_check.id))
-        return jsonify(access_token=access_token), 200
-    else:
-        return jsonify(error="Invalid username or password"), 401
+    access_token = create_access_token(identity=str(user_row.id))
+    return jsonify(access_token=access_token), 200
 
 
 @app.route('/profile')
